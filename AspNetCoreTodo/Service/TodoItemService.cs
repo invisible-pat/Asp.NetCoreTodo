@@ -1,5 +1,6 @@
 ﻿using AspNetCoreTodo.Data;
 using AspNetCoreTodo.Models;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace AspNetCoreTodo.Service
@@ -13,11 +14,12 @@ namespace AspNetCoreTodo.Service
             _dbContext = dbContext;
         }
 
-        public async Task<bool> AddItemAsync(TodoItem newItem)
+        public async Task<bool> AddItemAsync(TodoItem newItem, IdentityUser user)
         {
             newItem.id = Guid.NewGuid();
             newItem.IsDone = false;
             newItem.DueAt = DateTimeOffset.Now.AddDays(3);
+            newItem.UserId = user.Id;
 
             _dbContext.Item.Add(newItem);
 
@@ -25,17 +27,18 @@ namespace AspNetCoreTodo.Service
             return saveResult == 1;
         }
 
-        public async Task<TodoItem[]> GetIncompleteItemsAsync()
+        public async Task<TodoItem[]> GetIncompleteItemsAsync(IdentityUser user)
         {
-            return await _dbContext.Item.Where(x => x.IsDone == false).ToArrayAsync();
+            var Items = await _dbContext.Item.Where(x => x.IsDone == false && x.UserId == user.Id).ToArrayAsync();
+            return Items;
         }
 
-        public async Task<bool> MarkDoneAsync(Guid Id)
+        public async Task<bool> MarkDoneAsync(Guid Id, IdentityUser user)
         {
             //用来查主键的
             //精确检索单条记录的异步方法，适用于明确预期结果唯一性的场景。
             //使用时需确保查询条件能限制结果为 0 或 1 条记录，否则需处理异常或改用 FirstOrDefaultAsync()
-            var markDoneItem = await _dbContext.Item.Where(x => x.id == Id).SingleOrDefaultAsync();
+            var markDoneItem = await _dbContext.Item.Where(x => x.id == Id && x.UserId == user.Id).SingleOrDefaultAsync();
             if (markDoneItem == null) return false;
 
             markDoneItem.IsDone = true;

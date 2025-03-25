@@ -1,6 +1,7 @@
 ﻿using AspNetCoreTodo.Models;
 using AspNetCoreTodo.Service;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AspNetCoreTodo.Controllers
@@ -8,20 +9,20 @@ namespace AspNetCoreTodo.Controllers
     public class TodoController : Controller
     {
         private readonly ITodoItemService _todoItemService;
-        public TodoController(ITodoItemService todoItemService)
+        private readonly UserManager<IdentityUser> _userManager;
+        public TodoController(ITodoItemService todoItemService, UserManager<IdentityUser> userManager)
         {
             _todoItemService = todoItemService;
+            _userManager = userManager;
         }
 
         [Authorize]
         public async Task<IActionResult> Index()
         {
-            // 从数据库获取 to-do 条目
+            var currentUser = await _userManager.GetUserAsync(User);
+            if (currentUser == null) return Challenge();
 
-            // 把条目置于 model 中
-
-            // 使用 model 渲染视图
-            var items = await _todoItemService.GetIncompleteItemsAsync();
+            var items = await _todoItemService.GetIncompleteItemsAsync(currentUser);
             TodoViewModel todoViewModel = new TodoViewModel { TodoItems = items };
 
             return View(todoViewModel);
@@ -41,7 +42,10 @@ namespace AspNetCoreTodo.Controllers
                 return RedirectToAction("Index");
             }
 
-            var successful = await _todoItemService.AddItemAsync(todoItem);
+            var currentUser = await _userManager.GetUserAsync(User);
+            if (currentUser == null) return Challenge();
+
+            var successful = await _todoItemService.AddItemAsync(todoItem, currentUser);
 
             if (!successful)
             {
@@ -59,7 +63,10 @@ namespace AspNetCoreTodo.Controllers
                 return RedirectToAction("Index");
             }
 
-            var successful = await _todoItemService.MarkDoneAsync(Id);
+            var currentUser = await _userManager.GetUserAsync(User);
+            if (currentUser == null) return Challenge();
+
+            var successful = await _todoItemService.MarkDoneAsync(Id, currentUser);
             if (!successful)
             {
                 return BadRequest("Could not mark item as done.");

@@ -12,6 +12,8 @@ namespace AspNetCoreTodo.Models
         [Required]
         public string Title { get; set; } = string.Empty;
 
+        public string UserId { get; set; } = string.Empty;
+
         //DateTimeOffset 是可以为空 可以保存时期/时间/和时区
         public DateTimeOffset? DueAt { get; set; }
     }
