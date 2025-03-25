@@ -1,0 +1,9 @@
+﻿@using AspNetCoreTodo.Models
+@model TodoItem
+
+@* 视图地址跟随他的父类走 除非你明确定义 asp-controller="HomeController"*@
+<form asp-action="AddItem" method="post">
+    <label asp-for="Title">Add a new Item:</label>
+    <input asp-for="Title"/>
+    <button type="submit">Add</button>
+</form>
